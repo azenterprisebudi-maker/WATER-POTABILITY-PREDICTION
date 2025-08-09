@@ -1,0 +1,32 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
+import numpy as np
+
+app = FastAPI()
+
+class WaterQualityInput(BaseModel):
+    pH: float
+    Hardness: float
+    Solids: float
+    Chloramines: float
+    Sulfate: float
+    Conductivity: float
+    Turbidity: float
+    Organic_carbon: float
+    Trihalomethanes: float
+
+def predict_potability(features: np.ndarray) -> dict:
+    score = np.clip(100 - np.sum(features) % 100, 0, 100)
+    return {
+        "potability": "Potable" if score > 70 else "Non-potable",
+        "confidence": f"{score:.2f}%"
+    }
+
+@app.post("/predict")
+def predict(input: WaterQualityInput):
+    features = np.array([
+        input.pH, input.Hardness, input.Solids, input.Chloramines,
+        input.Sulfate, input.Conductivity, input.Turbidity,
+        input.Organic_carbon, input.Trihalomethanes
+    ])
+    return predict_potability(features)
